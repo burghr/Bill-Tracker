@@ -1,0 +1,86 @@
+.paycheck-group {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.group-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.group-name {
+  font-weight: 700;
+  font-size: 16px;
+}
+.group-name.unassigned { color: var(--text-muted); }
+
+.group-badge {
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(99,102,241,0.15);
+  color: var(--accent);
+  padding: 2px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.group-amount {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--green);
+  font-variant-numeric: tabular-nums;
+}
+
+.group-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.bills-list {
+  /* no padding — BillItem handles its own padding */
+}
+
+.empty-msg {
+  color: var(--text-muted);
+  font-size: 13px;
+  padding: 16px;
+  text-align: center;
+}
+
+.group-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  background: var(--surface2);
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--text-muted);
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.group-footer strong {
+  color: var(--text);
+}
+
+.group-footer .positive strong { color: var(--green); }
+.group-footer .negative strong { color: var(--red); }

@@ -1,0 +1,397 @@
+.reports-page {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+.reports-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 2rem;
+}
+
+/* ── Sections ── */
+.report-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.report-section-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin: 0 0 1.25rem;
+}
+
+/* ── Stat cards ── */
+.stat-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.stat-card {
+  background: var(--surface2, #181825);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.9rem 1rem;
+}
+
+.stat-label {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-bottom: 0.3rem;
+  font-weight: 500;
+}
+
+.stat-value {
+  font-size: 1.2rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-sub {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: 0.15rem;
+}
+
+.positive { color: var(--green, #a6e3a1); }
+.negative { color: var(--red, #f38ba8); }
+.warn     { color: #fab387; }
+
+/* ── Breakdown bars ── */
+.breakdown-block {
+  border-top: 1px solid var(--border);
+  padding-top: 1rem;
+}
+
+.breakdown-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.4rem;
+}
+
+.breakdown-row-label {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  width: 90px;
+  flex-shrink: 0;
+}
+
+.breakdown-bar {
+  flex: 1;
+  height: 10px;
+  background: var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+  display: flex;
+}
+
+.breakdown-fill {
+  height: 100%;
+  transition: width 0.4s ease;
+}
+.debt-fill  { background: #f38ba8; }
+.reg-fill   { background: #89b4fa; }
+.paid-fill  { background: #a6e3a1; }
+
+.breakdown-legend {
+  display: flex;
+  gap: 1.25rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  flex-wrap: wrap;
+}
+
+.legend-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+/* ── Table ── */
+.table-wrap {
+  overflow-x: auto;
+}
+
+.report-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.report-table th {
+  text-align: left;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  padding: 0 0.75rem 0.6rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.report-table th.num,
+.report-table td.num {
+  text-align: right;
+}
+
+.report-table td {
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  font-variant-numeric: tabular-nums;
+}
+
+.report-table tbody tr:last-child td { border-bottom: none; }
+
+.report-table tfoot td {
+  border-top: 1px solid var(--border);
+  border-bottom: none;
+  padding-top: 0.7rem;
+}
+
+/* ── Strategy section ── */
+.strategy-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.strategy-section-head .report-section-title {
+  margin: 0;
+}
+
+.extra-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.extra-input-wrap {
+  display: flex;
+  align-items: center;
+  background: var(--surface2, #181825);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.2em 0.5em;
+}
+
+.extra-dollar {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.extra-input {
+  width: 80px;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 0.9rem;
+  color: var(--text);
+  padding: 0 0.25rem;
+}
+
+.strategy-tip {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  background: rgba(166, 227, 161, 0.08);
+  border: 1px solid rgba(166, 227, 161, 0.2);
+  border-radius: 8px;
+  padding: 0.6rem 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.strategy-tip strong { color: var(--green); }
+
+.strategy-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 640px) {
+  .strategy-grid { grid-template-columns: 1fr; }
+  .stat-cards { grid-template-columns: repeat(2, 1fr); }
+}
+
+.strategy-card {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.strategy-card.avalanche { border-color: rgba(137, 180, 250, 0.35); }
+.strategy-card.snowball  { border-color: rgba(166, 227, 161, 0.35); }
+
+.strategy-card-head {
+  padding: 1rem 1.1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.strategy-card.avalanche .strategy-card-head { background: rgba(137, 180, 250, 0.07); }
+.strategy-card.snowball  .strategy-card-head { background: rgba(166, 227, 161, 0.07); }
+
+.strategy-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.strategy-subtitle {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.15rem;
+  max-width: 180px;
+}
+
+.strategy-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  text-align: right;
+}
+
+.strategy-summary-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.strategy-summary-label {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.strategy-summary-value {
+  font-size: 0.95rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.strategy-list {
+  list-style: none;
+  margin: 0;
+  padding: 0.5rem 0;
+}
+
+.strategy-list-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 1.1rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.85rem;
+}
+
+.strategy-list-item:last-child { border-bottom: none; }
+
+.strategy-rank {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.strategy-debt-name {
+  flex: 1;
+  font-weight: 500;
+}
+
+.strategy-debt-month {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Paycheck coverage ── */
+.coverage-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+
+.coverage-card {
+  background: var(--surface2, #181825);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.9rem 1rem;
+}
+
+.coverage-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+}
+
+.coverage-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.coverage-amount {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.coverage-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.coverage-bar {
+  flex: 1;
+  height: 7px;
+  background: var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.coverage-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.coverage-pct {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  width: 30px;
+  text-align: right;
+}
+
+.coverage-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}

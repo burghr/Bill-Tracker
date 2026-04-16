@@ -1,0 +1,17 @@
+services:
+  bills-tracker:
+    build: .
+    ports:
+      - "3001:3001"
+    volumes:
+      - bills-data:/data
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - DB_PATH=/data/bills.db
+      - SESSION_PATH=/data/sessions
+      - SESSION_SECRET=${SESSION_SECRET:?Set SESSION_SECRET in .env}
+    restart: unless-stopped
+
+volumes:
+  bills-data:

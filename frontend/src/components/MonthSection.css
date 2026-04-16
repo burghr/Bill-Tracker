@@ -1,0 +1,64 @@
+.month-section {
+  margin-bottom: 32px;
+  border-left: 4px solid var(--border);
+  padding-left: 16px;
+}
+
+.month-section.month-current {
+  border-left-color: var(--accent);
+}
+
+.month-section.month-past {
+  opacity: 0.6;
+  border-left-color: var(--border);
+}
+
+.month-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.month-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.month-name {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text);
+}
+
+.month-past .month-name {
+  color: var(--text-muted);
+}
+
+.month-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.month-badge.current {
+  background: rgba(99, 102, 241, 0.15);
+  color: var(--accent);
+}
+
+.month-badge.past {
+  background: var(--surface2);
+  color: var(--text-muted);
+}
+
+.month-body {
+  /* no extra padding — paycheck groups handle their own spacing */
+}

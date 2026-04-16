@@ -1,0 +1,7 @@
+**/node_modules
+frontend/dist
+**/*.db
+**/sessions
+.git
+.gitignore
+*.md
