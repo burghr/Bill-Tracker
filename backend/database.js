@@ -68,6 +68,10 @@ try { db.exec('ALTER TABLE bills ADD COLUMN principal_paid REAL'); } catch (_) {
 try { db.exec('ALTER TABLE bills ADD COLUMN sort_order INTEGER'); } catch (_) {}
 try { db.exec('ALTER TABLE debts ADD COLUMN sort_order INTEGER'); } catch (_) {}
 
+// Migration: autopay support
+try { db.exec('ALTER TABLE bills ADD COLUMN is_autopay INTEGER NOT NULL DEFAULT 0'); } catch (_) {}
+try { db.exec('ALTER TABLE bills ADD COLUMN pay_on TEXT'); } catch (_) {}
+
 // Migration: add period column if it doesn't exist yet
 try {
   db.exec('ALTER TABLE bills ADD COLUMN period TEXT');

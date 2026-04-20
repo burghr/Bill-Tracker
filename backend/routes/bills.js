@@ -28,7 +28,7 @@ function extendRecurringBills(userId, targetPeriod) {
   if (groups.length === 0) return;
 
   const insert = db.prepare(
-    'INSERT INTO bills (user_id, name, amount, paycheck_id, due_date, recurrence, period, group_id, debt_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    'INSERT INTO bills (user_id, name, amount, paycheck_id, due_date, recurrence, period, group_id, debt_id, is_autopay, pay_on) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
   );
 
   for (const { group_id, max_period } of groups) {
@@ -53,8 +53,52 @@ function extendRecurringBills(userId, targetPeriod) {
         template.recurrence,
         period,
         group_id,
-        template.debt_id
+        template.debt_id,
+        template.is_autopay || 0,
+        template.pay_on || null
       );
+    }
+  }
+}
+
+// Compute the effective pay date for a bill row by combining its period (YYYY-MM)
+// with the day-of-month from pay_on. Returns YYYY-MM-DD or null.
+function effectivePayDate(bill) {
+  if (!bill.pay_on || !bill.period) return null;
+  const day = bill.pay_on.slice(-2);
+  return `${bill.period}-${day}`;
+}
+
+function applyAutopaySweep(userId) {
+  const today = new Date().toISOString().slice(0, 10);
+  const candidates = db.prepare(
+    `SELECT * FROM bills WHERE user_id = ? AND is_autopay = 1 AND is_paid = 0 AND pay_on IS NOT NULL`
+  ).all(userId);
+
+  for (const bill of candidates) {
+    const payDate = effectivePayDate(bill);
+    if (!payDate || payDate > today) continue;
+
+    db.exec('BEGIN');
+    try {
+      if (bill.debt_id) {
+        const debt = db.prepare('SELECT * FROM debts WHERE id = ? AND user_id = ?')
+          .get(bill.debt_id, userId);
+        if (debt) {
+          const monthlyInterest = debt.current_balance * (debt.interest_rate / 100 / 12);
+          const principal = Math.max(0, bill.amount - monthlyInterest);
+          db.prepare('UPDATE debts SET current_balance = MAX(0, current_balance - ?) WHERE id = ?')
+            .run(principal, debt.id);
+          db.prepare('UPDATE bills SET principal_paid = ? WHERE id = ?').run(principal, bill.id);
+        }
+      }
+      db.prepare('UPDATE bills SET is_paid = 1 WHERE id = ?').run(bill.id);
+      db.prepare(
+        'UPDATE account SET balance = balance - ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?'
+      ).run(bill.amount, userId);
+      db.exec('COMMIT');
+    } catch (err) {
+      db.exec('ROLLBACK');
     }
   }
 }
@@ -75,6 +119,7 @@ function buildPeriods(start, recurrence) {
 router.get('/', (req, res) => {
   // Auto-extend recurring bills so they always reach at least 6 months ahead
   extendRecurringBills(req.session.userId, addMonths(currentPeriod(), 24));
+  applyAutopaySweep(req.session.userId);
 
   const bills = db
     .prepare(`
@@ -89,7 +134,7 @@ router.get('/', (req, res) => {
 });
 
 router.post('/', (req, res) => {
-  const { name, amount, paycheck_id, due_date, recurrence, start_period, debt_id } = req.body;
+  const { name, amount, paycheck_id, due_date, recurrence, start_period, debt_id, is_autopay, pay_on } = req.body;
 
   if (!name || amount == null) {
     return res.status(400).json({ error: 'Name and amount are required' });
@@ -110,7 +155,7 @@ router.post('/', (req, res) => {
   const groupId = periods.length > 1 ? randomUUID() : null;
 
   const insert = db.prepare(
-    'INSERT INTO bills (user_id, name, amount, paycheck_id, due_date, recurrence, period, group_id, debt_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    'INSERT INTO bills (user_id, name, amount, paycheck_id, due_date, recurrence, period, group_id, debt_id, is_autopay, pay_on) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
   );
   const fetchBill = db.prepare(`
     SELECT b.*, p.name AS paycheck_name
@@ -132,7 +177,9 @@ router.post('/', (req, res) => {
         rec,
         period,
         groupId,
-        debt_id || null
+        debt_id || null,
+        is_autopay ? 1 : 0,
+        pay_on || null
       );
       createdBills.push(fetchBill.get(result.lastInsertRowid));
     }
@@ -168,7 +215,7 @@ router.put('/reorder', (req, res) => {
 
 router.put('/:id', (req, res) => {
   const { id } = req.params;
-  const { name, amount, paycheck_id, due_date, recurrence, is_paid, debt_id } = req.body;
+  const { name, amount, paycheck_id, due_date, recurrence, is_paid, debt_id, is_autopay, pay_on } = req.body;
 
   const existing = db
     .prepare('SELECT * FROM bills WHERE id = ? AND user_id = ?')
@@ -218,6 +265,9 @@ router.put('/:id', (req, res) => {
         .run(newPaycheckId, existing.group_id, req.session.userId);
     }
 
+    const newIsAutopay = is_autopay != null ? (is_autopay ? 1 : 0) : existing.is_autopay;
+    const newPayOn = pay_on !== undefined ? (pay_on || null) : existing.pay_on;
+
     db.prepare(
       `UPDATE bills SET
         name = ?,
@@ -226,7 +276,9 @@ router.put('/:id', (req, res) => {
         due_date = ?,
         recurrence = ?,
         is_paid = ?,
-        debt_id = ?
+        debt_id = ?,
+        is_autopay = ?,
+        pay_on = ?
       WHERE id = ? AND user_id = ?`
     ).run(
       name ?? existing.name,
@@ -236,9 +288,17 @@ router.put('/:id', (req, res) => {
       recurrence ?? existing.recurrence,
       newIsPaid,
       newDebtId,
+      newIsAutopay,
+      newPayOn,
       id,
       req.session.userId
     );
+
+    // If update_group is set, apply autopay to all bills in the group (pay_on stays per-row)
+    if (req.body.update_group && existing.group_id && is_autopay != null) {
+      db.prepare('UPDATE bills SET is_autopay = ? WHERE group_id = ? AND user_id = ?')
+        .run(newIsAutopay, existing.group_id, req.session.userId);
+    }
 
     if (balanceDelta !== 0) {
       db.prepare(

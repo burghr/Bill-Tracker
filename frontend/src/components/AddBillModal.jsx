@@ -15,6 +15,8 @@ export default function AddBillModal({ existing, paychecks, debts, defaultPayche
     recurrence: 'monthly',
     start_period: defaultPeriod || getCurrentPeriod(),
     debt_id: defaultDebt ? defaultDebt.id.toString() : '',
+    is_autopay: false,
+    pay_on: '',
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -30,6 +32,8 @@ export default function AddBillModal({ existing, paychecks, debts, defaultPayche
         recurrence: existing.recurrence || 'monthly',
         start_period: existing.period || getCurrentPeriod(),
         debt_id: existing.debt_id || '',
+        is_autopay: !!existing.is_autopay,
+        pay_on: existing.pay_on || '',
       });
     }
   }, [existing]);
@@ -69,6 +73,8 @@ export default function AddBillModal({ existing, paychecks, debts, defaultPayche
       recurrence: form.recurrence,
       start_period: form.start_period || null,
       debt_id: form.debt_id || null,
+      is_autopay: form.is_autopay,
+      pay_on: form.is_autopay ? (form.pay_on || null) : null,
     };
 
     // If editing a grouped bill and paycheck changed, ask scope
@@ -239,6 +245,30 @@ export default function AddBillModal({ existing, paychecks, debts, defaultPayche
               </div>
             );
           })()}
+          <div className="form-group">
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={form.is_autopay}
+                onChange={(e) => setForm({ ...form, is_autopay: e.target.checked })}
+                style={{ width: 'auto' }}
+              />
+              Auto-pay
+            </label>
+          </div>
+          {form.is_autopay && (
+            <div className="form-group">
+              <label>Pay on</label>
+              <input
+                type="date"
+                value={form.pay_on}
+                onChange={(e) => setForm({ ...form, pay_on: e.target.value })}
+              />
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                Bill auto-marks paid once this date has passed. For recurring bills, the day-of-month is reused each period.
+              </span>
+            </div>
+          )}
           {!existing && (
             <div className="form-group">
               <label>Starting Month</label>
