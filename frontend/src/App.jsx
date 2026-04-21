@@ -287,12 +287,17 @@ function Dashboard({ user, onLogout, onProfileUpdate }) {
 
 export default function App() {
   const [user, setUser] = useState(undefined);
+  const [authMode, setAuthMode] = useState(null); // 'local' | 'sso'
   const navigate = useNavigate();
 
   useEffect(() => {
-    api.me()
-      .then(setUser)
-      .catch(() => setUser(null));
+    Promise.all([
+      api.config().catch(() => ({ mode: 'local' })),
+      api.me().catch(() => null),
+    ]).then(([cfg, me]) => {
+      setAuthMode(cfg?.mode === 'sso' ? 'sso' : 'local');
+      setUser(me);
+    });
   }, []);
 
   function handleLogin(u) {
@@ -302,22 +307,30 @@ export default function App() {
 
   function handleLogout() {
     setUser(null);
+    // In SSO mode the forward-auth cookie would silently re-auth on next nav,
+    // so end the Authentik proxy session too.
+    if (authMode === 'sso') {
+      window.location.href = '/outpost.goauthentik.io/sign_out';
+      return;
+    }
     navigate('/login');
   }
 
-  if (user === undefined) {
+  if (user === undefined || authMode === null) {
     return <div className="loading">Loading…</div>;
   }
+
+  const ssoMode = authMode === 'sso';
 
   return (
     <Routes>
       <Route
         path="/login"
-        element={user ? <Navigate to="/" replace /> : <LoginPage onLogin={handleLogin} />}
+        element={ssoMode || user ? <Navigate to="/" replace /> : <LoginPage onLogin={handleLogin} />}
       />
       <Route
         path="/register"
-        element={user ? <Navigate to="/" replace /> : <RegisterPage onLogin={handleLogin} />}
+        element={ssoMode || user ? <Navigate to="/" replace /> : <RegisterPage onLogin={handleLogin} />}
       />
       <Route
         path="/*"

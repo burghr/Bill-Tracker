@@ -11,6 +11,9 @@ services:
       - DB_PATH=/data/bills.db
       - SESSION_PATH=/data/sessions
       - SESSION_SECRET=${SESSION_SECRET:?Set SESSION_SECRET in .env}
+      - AUTH_MODE=${AUTH_MODE:-local}
+      - SSO_HEADER_USERNAME=${SSO_HEADER_USERNAME:-X-authentik-username}
+      - SSO_HEADER_EMAIL=${SSO_HEADER_EMAIL:-X-authentik-email}
     restart: unless-stopped
 
 volumes:

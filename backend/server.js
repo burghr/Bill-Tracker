@@ -32,6 +32,9 @@ app.use(session({
   },
 }));
 
+const { ssoAutoLogin } = require('./middleware/auth');
+app.use(ssoAutoLogin);
+
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/paychecks', require('./routes/paychecks'));
 app.use('/api/bills', require('./routes/bills'));

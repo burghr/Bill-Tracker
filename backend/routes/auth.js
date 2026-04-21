@@ -1,10 +1,15 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const db = require('../database');
+const { blockIfSso, ssoEnabled } = require('../middleware/auth');
 
 const router = express.Router();
 
-router.post('/register', (req, res) => {
+router.get('/config', (req, res) => {
+  res.json({ mode: ssoEnabled() ? 'sso' : 'local' });
+});
+
+router.post('/register', blockIfSso, (req, res) => {
   const { username, email, password } = req.body;
 
   if (!username || !password) {
@@ -37,7 +42,7 @@ router.post('/register', (req, res) => {
   }
 });
 
-router.post('/login', (req, res) => {
+router.post('/login', blockIfSso, (req, res) => {
   const { username, password } = req.body;
 
   if (!username || !password) {
@@ -55,7 +60,7 @@ router.post('/login', (req, res) => {
   res.json({ id: user.id, username: user.username });
 });
 
-router.put('/profile', (req, res) => {
+router.put('/profile', blockIfSso, (req, res) => {
   if (!req.session || !req.session.userId) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
@@ -101,10 +106,11 @@ router.post('/logout', (req, res) => {
 });
 
 router.get('/me', (req, res) => {
+  const mode = ssoEnabled() ? 'sso' : 'local';
   if (!req.session || !req.session.userId) {
-    return res.status(401).json({ error: 'Unauthorized' });
+    return res.status(401).json({ error: 'Unauthorized', mode });
   }
-  res.json({ id: req.session.userId, username: req.session.username });
+  res.json({ id: req.session.userId, username: req.session.username, mode });
 });
 
 module.exports = router;
