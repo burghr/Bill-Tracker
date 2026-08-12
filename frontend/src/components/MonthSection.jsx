@@ -20,18 +20,24 @@ function getBiweeklyPayDates(anchorDate, period) {
   const monthEnd = new Date(year, month, 0); // last day of month
 
   const anchor = new Date(anchorDate + 'T00:00:00');
-  const dayMs = 86400000;
-  const intervalMs = 14 * dayMs;
+
+  // Step in calendar days, not milliseconds: ms arithmetic drifts an hour
+  // across DST transitions, which shifts midnight dates onto the wrong day.
+  const addDays = (date, n) => {
+    const next = new Date(date);
+    next.setDate(next.getDate() + n);
+    return next;
+  };
 
   // Find the first pay date on or before monthStart
   const diffMs = monthStart.getTime() - anchor.getTime();
-  const periods = Math.floor(diffMs / intervalMs);
-  let payDate = new Date(anchor.getTime() + periods * intervalMs);
+  const periods = Math.floor(diffMs / (14 * 86400000));
+  let payDate = addDays(anchor, periods * 14);
 
   const dates = [];
   while (payDate <= monthEnd) {
     if (payDate >= monthStart) dates.push(new Date(payDate));
-    payDate = new Date(payDate.getTime() + intervalMs);
+    payDate = addDays(payDate, 14);
   }
   return dates;
 }
