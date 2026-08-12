@@ -70,6 +70,41 @@ While testing without Authentik, leave `AUTH_MODE=local` (the default) and use t
 
 Logout in SSO mode redirects through `/outpost.goauthentik.io/sign_out` to end the Authentik session.
 
+### Switching back to local login
+
+Set the mode back in `.env`, then recreate the container so it picks up the change:
+
+```bash
+AUTH_MODE=local
+```
+
+```bash
+docker compose up -d
+```
+
+That restores the login and registration pages. No data is touched: every user, bill, and budget stays where it was, and any account that had a password before you moved to SSO can log in with it again. Existing browser sessions survive the switch too, so you may stay logged in until you hit logout. Once the app is off SSO, take it out from behind the Authentik outpost or the proxy will keep gating it.
+
+The catch is accounts Authentik created for you. Those were auto-created with a placeholder password hash that no password matches, so there is nothing to log in with and any attempt returns "Invalid username or password". The profile page can't fix it either, since changing a password there requires knowing the current one.
+
+Two ways out. If the SSO-created account has no data worth keeping, register a fresh account and start there. Otherwise set a password on it directly:
+
+```bash
+docker compose exec -w /app/backend bills-tracker node -e '
+const bcrypt = require("bcryptjs");
+const db = require("./database");
+const [username, password] = process.argv.slice(1);
+const r = db.prepare("UPDATE users SET password_hash = ? WHERE username = ?")
+  .run(bcrypt.hashSync(password, 10), username);
+console.log(r.changes ? "password set for " + username : "no such user: " + username);
+' myusername 'my-new-password'
+```
+
+The `-w /app/backend` matters. Without it the script runs from `/app`, where `require("bcryptjs")` can't find the backend's `node_modules`.
+
+Then log in normally and change the password from the profile page. Quote the password so your shell leaves it alone, and remember it will sit in your shell history.
+
+Going local to SSO and back again is safe to repeat. The mode only decides how a session gets established; the user rows are the same either way.
+
 ## Development Setup
 
 **Backend:**
