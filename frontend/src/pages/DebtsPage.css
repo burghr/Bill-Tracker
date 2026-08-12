@@ -2,6 +2,8 @@
   max-width: 1100px;
   margin: 0 auto;
   padding: 2rem 1.5rem;
+  width: 100%;
+  min-width: 0;
 }
 
 .debts-page-header {

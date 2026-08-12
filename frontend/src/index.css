@@ -84,6 +84,12 @@ input, select {
 input:focus, select:focus { border-color: var(--accent); }
 input::placeholder { color: var(--text-muted); }
 
+/* iOS Safari auto-zooms the page when focusing any input with a font size
+   under 16px; keep form controls at 16px on small screens to prevent it. */
+@media (max-width: 640px) {
+  input, select { font-size: 16px; }
+}
+
 label {
   display: block;
   font-size: 12px;
