@@ -2,6 +2,15 @@
   max-width: 1000px;
   margin: 0 auto;
   padding: 2rem 1.5rem;
+  /* .app is a column flex container; without these the page stretches to the
+     min-content width of tables and overflows small screens */
+  width: 100%;
+  min-width: 0;
+}
+
+@media (max-width: 640px) {
+  .reports-page { padding: 1rem 0.75rem; }
+  .report-section { padding: 1rem; }
 }
 
 .reports-title {
@@ -394,4 +403,116 @@
   justify-content: space-between;
   font-size: 0.75rem;
   color: var(--text-muted);
+}
+
+/* ── Budget pie charts ── */
+.pie-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  margin-bottom: 8px;
+}
+
+.pie-block {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.pie-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  align-self: flex-start;
+}
+
+.pie-empty {
+  color: var(--text-muted);
+  font-size: 13px;
+  padding: 20px 0;
+}
+
+.pie-slice.clickable { cursor: pointer; }
+.pie-slice { transition: opacity 0.15s; stroke: var(--surface2); stroke-width: 1; }
+.pie-slice.dimmed { opacity: 0.35; }
+.pie-slice.selected { stroke: var(--text); stroke-width: 2; }
+.pie-slice.clickable:hover { opacity: 0.85; }
+
+.pie-legend {
+  width: 100%;
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pie-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 4px 8px;
+  font-size: 13px;
+  color: var(--text);
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  text-align: left;
+  cursor: default;
+}
+
+.pie-legend-item.clickable { cursor: pointer; }
+.pie-legend-item.clickable:hover { background: var(--surface); }
+.pie-legend-item.active { background: var(--surface); outline: 1px solid var(--border); }
+
+.pie-legend-label { flex: 1; }
+.pie-legend-value { color: var(--text-muted); font-variant-numeric: tabular-nums; }
+
+.pie-legend-total {
+  border-top: 1px solid var(--border);
+  margin-top: 4px;
+  padding-top: 6px;
+  font-weight: 600;
+}
+.pie-legend-total .pie-legend-value { color: var(--text); }
+
+/* ── Filtered transactions panel ── */
+.tx-filter-panel {
+  margin-top: 16px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+
+.tx-filter-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.tx-filter-head .pie-title { margin-bottom: 0; }
+
+.tx-source-tag {
+  font-size: 11px;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 6px;
+  margin-left: 8px;
+}
+
+.subcat-table-row td {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  padding-top: 0.3rem;
+  padding-bottom: 0.3rem;
+}
+
+.subcat-table-name {
+  padding-left: 1.5rem !important;
 }

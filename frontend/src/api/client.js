@@ -39,10 +39,26 @@ export const api = {
   deleteBill: (id) => request(`/api/bills/${id}`, { method: 'DELETE' }),
   deleteBillGroup: (groupId) => request(`/api/bills/group/${groupId}`, { method: 'DELETE' }),
   reorderBills: (updates) => request('/api/bills/reorder', { method: 'PUT', body: updates }),
+  resetPeriod: (period) => request('/api/bills/reset-period', { method: 'POST', body: { period } }),
 
   // Balance
   getBalance: () => request('/api/balance'),
   setBalance: (balance) => request('/api/balance', { method: 'PUT', body: { balance } }),
+
+  // Budget
+  getHousehold: () => request('/api/budget/household'),
+  addHouseholdMember: (username) => request('/api/budget/household/members', { method: 'POST', body: { username } }),
+  removeHouseholdMember: (userId) => request(`/api/budget/household/members/${userId}`, { method: 'DELETE' }),
+  leaveHousehold: () => request('/api/budget/household/leave', { method: 'POST' }),
+  getBudgetCategories: (includeArchived) => request(`/api/budget/categories${includeArchived ? '?archived=true' : ''}`),
+  createBudgetCategory: (body) => request('/api/budget/categories', { method: 'POST', body }),
+  updateBudgetCategory: (id, body) => request(`/api/budget/categories/${id}`, { method: 'PUT', body }),
+  deleteBudgetCategory: (id) => request(`/api/budget/categories/${id}`, { method: 'DELETE' }),
+  getBudgetTransactions: (month) => request(`/api/budget/transactions?month=${month}`),
+  createBudgetTransaction: (body) => request('/api/budget/transactions', { method: 'POST', body }),
+  updateBudgetTransaction: (id, body) => request(`/api/budget/transactions/${id}`, { method: 'PUT', body }),
+  deleteBudgetTransaction: (id) => request(`/api/budget/transactions/${id}`, { method: 'DELETE' }),
+  getBudgetSummary: (month) => request(`/api/budget/summary?month=${month}`),
 
   // Debts
   getDebts: () => request('/api/debts'),

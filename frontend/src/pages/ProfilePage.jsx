@@ -1,6 +1,113 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { api } from '../api/client';
 import './AuthPage.css';
+
+function HouseholdSection({ user }) {
+  const [household, setHousehold] = useState(null);
+  const [addUsername, setAddUsername] = useState('');
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  const load = useCallback(async () => {
+    try {
+      setHousehold(await api.getHousehold());
+    } catch (err) {
+      console.error(err);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  async function handleAdd(e) {
+    e.preventDefault();
+    setError('');
+    if (!addUsername.trim()) return;
+    setBusy(true);
+    try {
+      await api.addHouseholdMember(addUsername.trim());
+      setAddUsername('');
+      await load();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleRemove(member) {
+    if (!window.confirm(`Remove @${member.username} from the household? They go back to their own budget.`)) return;
+    setError('');
+    try {
+      await api.removeHouseholdMember(member.id);
+      await load();
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  async function handleLeave() {
+    if (!window.confirm('Leave this household? You go back to your own budget.')) return;
+    setError('');
+    try {
+      await api.leaveHousehold();
+      await load();
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  if (!household) return null;
+
+  return (
+    <div className="auth-card" style={{ marginTop: '20px' }}>
+      <h2>Budget Household</h2>
+      <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '16px' }}>
+        Everyone in the household shares one budget: same categories, same transactions.
+        Paychecks from all members count toward household income in budget reports.
+      </p>
+
+      <ul style={{ listStyle: 'none', marginBottom: '16px' }}>
+        {household.members.map((m) => (
+          <li
+            key={m.id}
+            style={{
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              padding: '8px 0', borderBottom: '1px solid var(--border)',
+            }}
+          >
+            <span>
+              @{m.username}
+              {m.is_owner && <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}> · owner</span>}
+              {m.id === user.id && <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}> · you</span>}
+            </span>
+            {household.is_owner && !m.is_owner && (
+              <button className="btn-danger" style={{ padding: '3px 10px', fontSize: '12px' }} onClick={() => handleRemove(m)}>
+                Remove
+              </button>
+            )}
+          </li>
+        ))}
+      </ul>
+
+      {household.is_owner ? (
+        <form onSubmit={handleAdd} style={{ display: 'flex', gap: '8px' }}>
+          <input
+            type="text"
+            placeholder="Username to add"
+            value={addUsername}
+            onChange={(e) => setAddUsername(e.target.value)}
+          />
+          <button type="submit" className="btn-primary" disabled={busy || !addUsername.trim()} style={{ whiteSpace: 'nowrap' }}>
+            {busy ? 'Adding…' : 'Add'}
+          </button>
+        </form>
+      ) : (
+        <button className="btn-danger-outline" onClick={handleLeave}>Leave household</button>
+      )}
+      {error && <p className="error-msg">{error}</p>}
+    </div>
+  );
+}
 
 export default function ProfilePage({ user, onProfileUpdate }) {
   const [form, setForm] = useState({
@@ -111,6 +218,8 @@ export default function ProfilePage({ user, onProfileUpdate }) {
           </button>
         </form>
       </div>
+
+      <HouseholdSection user={user} />
     </div>
   );
 }

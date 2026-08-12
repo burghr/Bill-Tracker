@@ -150,19 +150,305 @@ function StrategyCard({ title, subtitle, accentClass, result }) {
 
 // ── Main page ────────────────────────────────────────────────────────────────
 
+function categoryColor(i) {
+  return `hsl(${(i * 57 + 210) % 360} 60% 55%)`;
+}
+
+const UNBUDGETED_COLOR = '#4a5065';
+
+function PieChart({ slices, selectedId, onSelect, size = 190 }) {
+  const total = slices.reduce((s, x) => s + x.value, 0);
+  if (total <= 0) return null;
+
+  const cx = size / 2;
+  const cy = size / 2;
+  const r = size / 2 - 4;
+
+  function sliceProps(s) {
+    return {
+      className: `pie-slice${s.clickable ? ' clickable' : ''}${
+        selectedId != null && selectedId !== s.id ? ' dimmed' : ''
+      }${selectedId === s.id ? ' selected' : ''}`,
+      onClick: s.clickable ? () => onSelect(s) : undefined,
+    };
+  }
+
+  let angle = -Math.PI / 2;
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img">
+      {slices.length === 1 ? (
+        <circle cx={cx} cy={cy} r={r} fill={slices[0].color} {...sliceProps(slices[0])}>
+          <title>{`${slices[0].label}: $${fmt(slices[0].value)}`}</title>
+        </circle>
+      ) : (
+        slices.map((s) => {
+          const frac = s.value / total;
+          const a0 = angle;
+          const a1 = angle + frac * 2 * Math.PI;
+          angle = a1;
+          const x0 = cx + r * Math.cos(a0);
+          const y0 = cy + r * Math.sin(a0);
+          const x1 = cx + r * Math.cos(a1);
+          const y1 = cy + r * Math.sin(a1);
+          const large = frac > 0.5 ? 1 : 0;
+          const d = `M ${cx} ${cy} L ${x0} ${y0} A ${r} ${r} 0 ${large} 1 ${x1} ${y1} Z`;
+          return (
+            <path key={s.id} d={d} fill={s.color} {...sliceProps(s)}>
+              <title>{`${s.label}: $${fmt(s.value)} (${(frac * 100).toFixed(1)}%)`}</title>
+            </path>
+          );
+        })
+      )}
+    </svg>
+  );
+}
+
+function PieBlock({ title, slices, selectedId, onSelect }) {
+  const total = slices.reduce((s, x) => s + x.value, 0);
+  if (slices.length === 0) {
+    return (
+      <div className="pie-block">
+        <h3 className="pie-title">{title}</h3>
+        <p className="pie-empty">Nothing to show this month.</p>
+      </div>
+    );
+  }
+  return (
+    <div className="pie-block">
+      <h3 className="pie-title">{title}</h3>
+      <PieChart slices={slices} selectedId={selectedId} onSelect={onSelect} />
+      <div className="pie-legend">
+        {slices.map((s) => (
+          <button
+            key={s.id}
+            type="button"
+            className={`pie-legend-item${s.clickable ? ' clickable' : ''}${selectedId === s.id ? ' active' : ''}`}
+            onClick={s.clickable ? () => onSelect(s) : undefined}
+            tabIndex={s.clickable ? 0 : -1}
+          >
+            <i className="legend-dot" style={{ background: s.color }} />
+            <span className="pie-legend-label">{s.label}</span>
+            <span className="pie-legend-value">${fmt(s.value)}</span>
+          </button>
+        ))}
+        <div className="pie-legend-item pie-legend-total">
+          <span className="pie-legend-label">Total</span>
+          <span className="pie-legend-value">${fmt(total)}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// One top-level category as table rows: the parent, then indented subcategories.
+function FragmentRows({ cat }) {
+  return (
+    <>
+      <tr>
+        <td>{cat.name}{cat.archived ? ' (archived)' : ''}</td>
+        <td className="num">${fmt(cat.budgeted)}</td>
+        <td className="num">${fmt(cat.actual)}</td>
+        <td className={`num ${cat.remaining < 0 ? 'warn' : ''}`}>
+          {cat.remaining < 0 ? `−$${fmt(-cat.remaining)}` : `$${fmt(cat.remaining)}`}
+        </td>
+        <td className="num">{cat.budgeted > 0 ? `${((cat.actual / cat.budgeted) * 100).toFixed(0)}%` : '—'}</td>
+      </tr>
+      {(cat.children || []).map((k) => (
+        <tr key={k.id} className="subcat-table-row">
+          <td className="subcat-table-name">↳ {k.name}{k.archived ? ' (archived)' : ''}</td>
+          <td className="num">{k.budgeted > 0 ? `$${fmt(k.budgeted)}` : '—'}</td>
+          <td className="num">${fmt(k.actual)}</td>
+          <td />
+          <td />
+        </tr>
+      ))}
+    </>
+  );
+}
+
+function BudgetReportSection({ summary, currentBills, transactions }) {
+  const [selected, setSelected] = useState(null); // { id, label } | null
+
+  if (!summary || summary.categories.length === 0) return null;
+
+  const { categories, totals } = summary;
+
+  // Stable color per category across both pies
+  const colorMap = new Map(categories.map((c, i) => [c.id, categoryColor(i)]));
+  let nextColor = categories.length;
+  const colorFor = (id) => {
+    if (!colorMap.has(id)) colorMap.set(id, categoryColor(nextColor++));
+    return colorMap.get(id);
+  };
+
+  // Subcategories roll up into their parent everywhere on this page.
+  const idToTop = new Map();
+  const groupIdsByTop = new Map();
+  for (const c of categories) {
+    const ids = [c.id, ...(c.children || []).map((k) => k.id)];
+    groupIdsByTop.set(c.id, ids);
+    for (const id of ids) idToTop.set(id, c);
+  }
+
+  // Pie 1: this month's bills grouped by their linked budget category
+  const billGroups = new Map();
+  for (const b of currentBills) {
+    const top = b.budget_category_id ? idToTop.get(b.budget_category_id) : null;
+    const key = top ? top.id : (b.budget_category_id || 0);
+    const g = billGroups.get(key) || {
+      id: key,
+      label: top ? top.name : (b.budget_category_id ? b.budget_category_name : 'Not budgeted'),
+      value: 0,
+    };
+    g.value += b.amount;
+    billGroups.set(key, g);
+  }
+  const billSlices = [...billGroups.values()]
+    .sort((a, b) => b.value - a.value)
+    .map((g) => ({
+      ...g,
+      color: g.id ? colorFor(g.id) : UNBUDGETED_COLOR,
+      clickable: !!g.id,
+    }));
+
+  // Pie 2: budget spending (all transactions) by category
+  const spendSlices = categories
+    .filter((c) => c.actual > 0)
+    .sort((a, b) => b.actual - a.actual)
+    .map((c) => ({
+      id: c.id,
+      label: c.name,
+      value: c.actual,
+      color: colorFor(c.id),
+      clickable: true,
+    }));
+
+  function handleSelect(slice) {
+    setSelected((prev) => (prev && prev.id === slice.id ? null : { id: slice.id, label: slice.label }));
+  }
+
+  const selectedGroup = selected ? (groupIdsByTop.get(selected.id) || [selected.id]) : [];
+  const filteredTxs = selected
+    ? transactions.filter((t) => selectedGroup.includes(t.category_id))
+    : [];
+  const filteredTotal = filteredTxs.reduce((s, t) => s + t.amount, 0);
+
+  return (
+    <section className="report-section">
+      <h2 className="report-section-title">Budget vs Actual</h2>
+
+      <div className="pie-grid">
+        <PieBlock
+          title="Bills by Budget Category"
+          slices={billSlices}
+          selectedId={selected?.id ?? null}
+          onSelect={handleSelect}
+        />
+        <PieBlock
+          title="Spending by Category"
+          slices={spendSlices}
+          selectedId={selected?.id ?? null}
+          onSelect={handleSelect}
+        />
+      </div>
+
+      {selected && (
+        <div className="tx-filter-panel">
+          <div className="tx-filter-head">
+            <h3 className="pie-title">
+              {selected.label} transactions — ${fmt(filteredTotal)}
+            </h3>
+            <button className="btn-ghost" onClick={() => setSelected(null)}>Clear</button>
+          </div>
+          {filteredTxs.length === 0 ? (
+            <p className="pie-empty">No transactions in {selected.label} this month. Linked bills only appear here once they are marked paid.</p>
+          ) : (
+            <div className="table-wrap">
+              <table className="report-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Description</th>
+                    <th className="num">Amount</th>
+                    <th>By</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredTxs.map((t) => (
+                    <tr key={t.id}>
+                      <td>{t.date}</td>
+                      <td>
+                        {t.description}
+                        {t.parent_category_name ? <span className="tx-source-tag">{t.category_name}</span> : null}
+                        {t.bill_id ? <span className="tx-source-tag">bill</span> : null}
+                      </td>
+                      <td className="num">${fmt(t.amount)}</td>
+                      <td>@{t.entered_by_username}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="table-wrap" style={{ marginTop: '1rem' }}>
+        <table className="report-table">
+          <thead>
+            <tr>
+              <th>Category</th>
+              <th className="num">Budgeted</th>
+              <th className="num">Spent</th>
+              <th className="num">Remaining</th>
+              <th className="num">Used</th>
+            </tr>
+          </thead>
+          <tbody>
+            {categories.map((c) => (
+              <FragmentRows key={c.id} cat={c} />
+            ))}
+          </tbody>
+          <tfoot>
+            <tr>
+              <td><strong>Total</strong></td>
+              <td className="num"><strong>${fmt(totals.budgeted)}</strong></td>
+              <td className="num"><strong>${fmt(totals.actual)}</strong></td>
+              <td className={`num ${totals.remaining < 0 ? 'warn' : ''}`}>
+                <strong>{totals.remaining < 0 ? `−$${fmt(-totals.remaining)}` : `$${fmt(totals.remaining)}`}</strong>
+              </td>
+              <td />
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </section>
+  );
+}
+
 export default function ReportsPage() {
   const [debts, setDebts] = useState([]);
   const [bills, setBills] = useState([]);
   const [paychecks, setPaychecks] = useState([]);
+  const [budgetSummary, setBudgetSummary] = useState(null);
+  const [budgetTxs, setBudgetTxs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [extraBudget, setExtraBudget] = useState('0');
 
   const loadData = useCallback(async () => {
     try {
-      const [dbt, bl, pc] = await Promise.all([api.getDebts(), api.getBills(), api.getPaychecks()]);
+      const [dbt, bl, pc, bs, txs] = await Promise.all([
+        api.getDebts(),
+        api.getBills(),
+        api.getPaychecks(),
+        api.getBudgetSummary(getCurrentPeriod()).catch(() => null),
+        api.getBudgetTransactions(getCurrentPeriod()).catch(() => []),
+      ]);
       setDebts(dbt);
       setBills(bl);
       setPaychecks(pc);
+      setBudgetSummary(bs);
+      setBudgetTxs(txs);
     } catch (err) {
       console.error(err);
     } finally {
@@ -256,6 +542,9 @@ export default function ReportsPage() {
           </div>
         )}
       </section>
+
+      {/* ── Budget vs Actual ── */}
+      <BudgetReportSection summary={budgetSummary} currentBills={currentBills} transactions={budgetTxs} />
 
       {/* ── Interest Cost ── */}
       {debts.length > 0 && (

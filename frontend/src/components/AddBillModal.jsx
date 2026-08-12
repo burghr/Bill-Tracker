@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { api } from '../api/client';
+import CategorySelect from './CategorySelect';
 
 function getCurrentPeriod() {
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 }
 
-export default function AddBillModal({ existing, paychecks, debts, defaultPaycheckId, defaultPeriod, defaultDebt, onSave, onClose }) {
+export default function AddBillModal({ existing, paychecks, debts, categories, defaultPaycheckId, defaultPeriod, defaultDebt, onSave, onClose }) {
   const [form, setForm] = useState({
     name: defaultDebt ? defaultDebt.name : '',
     amount: defaultDebt && defaultDebt.min_payment > 0 ? defaultDebt.min_payment.toString() : '',
@@ -17,10 +18,20 @@ export default function AddBillModal({ existing, paychecks, debts, defaultPayche
     debt_id: defaultDebt ? defaultDebt.id.toString() : '',
     is_autopay: false,
     pay_on: '',
+    budget_category_id: '',
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [pendingPayload, setPendingPayload] = useState(null); // waiting for group scope choice
+
+  // Props are just the initial values; re-fetch on open so lists added on
+  // other pages (categories, debts) show up without a full page reload.
+  const [catList, setCatList] = useState(categories || []);
+  const [debtList, setDebtList] = useState(debts || []);
+  useEffect(() => {
+    api.getBudgetCategories().then(setCatList).catch(() => {});
+    api.getDebts().then(setDebtList).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (existing) {
@@ -34,6 +45,7 @@ export default function AddBillModal({ existing, paychecks, debts, defaultPayche
         debt_id: existing.debt_id || '',
         is_autopay: !!existing.is_autopay,
         pay_on: existing.pay_on || '',
+        budget_category_id: existing.budget_category_id || '',
       });
     }
   }, [existing]);
@@ -75,14 +87,18 @@ export default function AddBillModal({ existing, paychecks, debts, defaultPayche
       debt_id: form.debt_id || null,
       is_autopay: form.is_autopay,
       pay_on: form.is_autopay ? (form.pay_on || null) : null,
+      budget_category_id: form.budget_category_id ? Number(form.budget_category_id) : null,
     };
 
-    // If editing a grouped bill and paycheck changed, ask scope
+    // If editing a grouped bill and an assignment changed, ask scope
     const paycheckChanged = existing &&
       existing.group_id &&
       (form.paycheck_id || '') !== (String(existing.paycheck_id || ''));
+    const categoryChanged = existing &&
+      existing.group_id &&
+      (form.budget_category_id || '') !== (String(existing.budget_category_id || ''));
 
-    if (paycheckChanged) {
+    if (paycheckChanged || categoryChanged) {
       setPendingPayload(payload);
       return;
     }
@@ -98,13 +114,21 @@ export default function AddBillModal({ existing, paychecks, debts, defaultPayche
 
   // ── Group scope prompt overlay ──────────────────────────────────────────
   if (pendingPayload) {
-    const newName = paychecks.find(p => String(p.id) === String(pendingPayload.paycheck_id))?.name || 'Unassigned';
+    const changes = [];
+    if ((form.paycheck_id || '') !== String(existing?.paycheck_id || '')) {
+      const newName = paychecks.find(p => String(p.id) === String(pendingPayload.paycheck_id))?.name || 'Unassigned';
+      changes.push(`paycheck to ${newName}`);
+    }
+    if ((form.budget_category_id || '') !== String(existing?.budget_category_id || '')) {
+      const catName = catList.find(c => String(c.id) === String(form.budget_category_id))?.name || 'None';
+      changes.push(`budget category to ${catName}`);
+    }
     return (
       <div className="modal-overlay">
         <div className="modal">
-          <h2>Update Paycheck Assignment</h2>
+          <h2>Update Bill Assignment</h2>
           <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem', lineHeight: 1.5 }}>
-            This bill repeats monthly. Should the paycheck change to <strong style={{ color: 'var(--text)' }}>{newName}</strong> apply to just this month, or every month in the series?
+            This bill repeats monthly. Should the change of <strong style={{ color: 'var(--text)' }}>{changes.join(' and ')}</strong> apply to just this month, or every month in the series?
           </p>
           {error && <p className="error-msg">{error}</p>}
           <div className="actions">
@@ -192,7 +216,7 @@ export default function AddBillModal({ existing, paychecks, debts, defaultPayche
               value={form.debt_id}
               onChange={(e) => {
                 const debtId = e.target.value;
-                const debt = debts && debts.find((d) => d.id === parseInt(debtId));
+                const debt = debtList.find((d) => d.id === parseInt(debtId));
                 if (debt && !existing) {
                   setForm((f) => ({
                     ...f,
@@ -206,11 +230,25 @@ export default function AddBillModal({ existing, paychecks, debts, defaultPayche
               }}
             >
               <option value="">— None —</option>
-              {debts && debts.map((d) => (
+              {debtList.map((d) => (
                 <option key={d.id} value={d.id}>{d.name}</option>
               ))}
             </select>
           </div>
+          {catList.length > 0 && (
+            <div className="form-group">
+              <label>Budget Category <span style={{ color: 'var(--text-muted)' }}>(optional)</span></label>
+              <CategorySelect
+                categories={catList}
+                value={form.budget_category_id}
+                onChange={(e) => setForm({ ...form, budget_category_id: e.target.value })}
+                allowEmpty
+              />
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                Paying this bill logs a transaction in the category.
+              </span>
+            </div>
+          )}
           <div className="form-group">
             <label>Recurrence</label>
             <select

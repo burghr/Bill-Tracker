@@ -4,6 +4,7 @@ import { api } from './api/client';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import DebtsPage from './pages/DebtsPage';
+import BudgetPage from './pages/BudgetPage';
 import ReportsPage from './pages/ReportsPage';
 import ProfilePage from './pages/ProfilePage';
 import Header from './components/Header';
@@ -29,6 +30,7 @@ function Dashboard({ user, onLogout, onProfileUpdate }) {
   const [paychecks, setPaychecks] = useState([]);
   const [bills, setBills] = useState([]);
   const [debts, setDebts] = useState([]);
+  const [budgetCategories, setBudgetCategories] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Modals
@@ -38,14 +40,16 @@ function Dashboard({ user, onLogout, onProfileUpdate }) {
 
   const loadData = useCallback(async () => {
     try {
-      const [pc, bl, dbt] = await Promise.all([
+      const [pc, bl, dbt, cats] = await Promise.all([
         api.getPaychecks(),
         api.getBills(),
         api.getDebts(),
+        api.getBudgetCategories().catch(() => []),
       ]);
       setPaychecks(pc);
       setBills(bl);
       setDebts(dbt);
+      setBudgetCategories(cats);
     } catch (err) {
       console.error(err);
     } finally {
@@ -161,10 +165,7 @@ function Dashboard({ user, onLogout, onProfileUpdate }) {
 
   async function handleResetPeriod(period) {
     if (!window.confirm(`Mark all bills in ${period} as unpaid?`)) return;
-    const paidBills = bills.filter((b) => b.period === period && b.is_paid);
-    for (const b of paidBills) {
-      await api.updateBill(b.id, { is_paid: false });
-    }
+    await api.resetPeriod(period);
     await loadData();
   }
 
@@ -177,6 +178,7 @@ function Dashboard({ user, onLogout, onProfileUpdate }) {
       <Header user={user} onLogout={onLogout} />
 
       <Routes>
+        <Route path="/budget" element={<BudgetPage />} />
         <Route path="/debts" element={<DebtsPage />} />
         <Route path="/reports" element={<ReportsPage />} />
         <Route path="/profile" element={<ProfilePage user={user} onProfileUpdate={onProfileUpdate} />} />
@@ -261,6 +263,7 @@ function Dashboard({ user, onLogout, onProfileUpdate }) {
                   existing={billModal.existing || null}
                   paychecks={paychecks}
                   debts={debts}
+                  categories={budgetCategories}
                   defaultPaycheckId={billModal.defaultPaycheckId}
                   defaultPeriod={billModal.defaultPeriod}
                   onSave={handleBillSave}

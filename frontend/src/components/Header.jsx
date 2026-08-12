@@ -16,6 +16,9 @@ export default function Header({ user, onLogout }) {
           <NavLink to="/" end className={({ isActive }) => isActive ? 'header-nav-link active' : 'header-nav-link'}>
             Bills
           </NavLink>
+          <NavLink to="/budget" className={({ isActive }) => isActive ? 'header-nav-link active' : 'header-nav-link'}>
+            Budget
+          </NavLink>
           <NavLink to="/debts" className={({ isActive }) => isActive ? 'header-nav-link active' : 'header-nav-link'}>
             Debts
           </NavLink>

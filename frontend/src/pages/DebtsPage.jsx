@@ -101,6 +101,7 @@ export default function DebtsPage() {
   const [debts, setDebts] = useState([]);
   const [bills, setBills] = useState([]);
   const [paychecks, setPaychecks] = useState([]);
+  const [budgetCategories, setBudgetCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [debtModal, setDebtModal] = useState(null);
   const [billModal, setBillModal] = useState(null);
@@ -108,14 +109,16 @@ export default function DebtsPage() {
 
   const loadData = useCallback(async () => {
     try {
-      const [dbt, bl, pc] = await Promise.all([
+      const [dbt, bl, pc, cats] = await Promise.all([
         api.getDebts(),
         api.getBills(),
         api.getPaychecks(),
+        api.getBudgetCategories().catch(() => []),
       ]);
       setDebts(dbt);
       setBills(bl);
       setPaychecks(pc);
+      setBudgetCategories(cats);
     } catch (err) {
       console.error(err);
     } finally {
@@ -258,6 +261,7 @@ export default function DebtsPage() {
           existing={null}
           paychecks={paychecks}
           debts={debts}
+          categories={budgetCategories}
           defaultDebt={billModal}
           onSave={handleBillSave}
           onClose={() => setBillModal(null)}

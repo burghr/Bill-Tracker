@@ -11,6 +11,8 @@ export default function BillItem({ bill, paychecks, onUpdate, onDelete, dragHand
     try {
       const result = await api.updateBill(bill.id, { is_paid: !bill.is_paid });
       onUpdate(result.bill, result.balance);
+    } catch (err) {
+      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -42,6 +44,11 @@ export default function BillItem({ bill, paychecks, onUpdate, onDelete, dragHand
         {bill.is_autopay && (
           <span className="bill-recurrence" title={bill.pay_on ? `Auto-pays on day ${bill.pay_on.slice(-2)}` : 'Auto-pay'}>
             auto-pay{bill.pay_on ? ` · ${bill.pay_on.slice(-2)}` : ''}
+          </span>
+        )}
+        {bill.budget_category_name && (
+          <span className="bill-recurrence" title="Paying this bill logs a budget transaction">
+            {bill.budget_category_name}
           </span>
         )}
       </div>

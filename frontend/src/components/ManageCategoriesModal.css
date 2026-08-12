@@ -1,0 +1,94 @@
+/* .modal.modal-wide beats index.css's .modal regardless of bundle order */
+.modal.modal-wide {
+  width: 680px;
+  max-width: 95vw;
+}
+
+.cat-hint {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+}
+
+.cat-row {
+  display: grid;
+  grid-template-columns: 1fr 130px auto auto;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.cat-row.archived input { opacity: 0.6; }
+
+.cat-row-child {
+  grid-template-columns: auto 1fr 130px auto auto;
+  padding-left: 14px;
+}
+
+.cat-child-arrow {
+  color: var(--text-muted);
+}
+
+.cat-add-row {
+  grid-template-columns: minmax(180px, 1fr) 110px 160px auto;
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Small screens: name on its own line, the rest beneath it */
+@media (max-width: 560px) {
+  .cat-add-row {
+    grid-template-columns: 100px 1fr auto;
+  }
+  .cat-add-row input[type="text"] {
+    grid-column: 1 / -1;
+  }
+}
+
+.cat-parent-select {
+  font-size: 13px;
+}
+
+.cat-amount-wrap {
+  position: relative;
+}
+
+.cat-dollar {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  font-size: 13px;
+  pointer-events: none;
+}
+
+.cat-amount-wrap input {
+  padding-left: 22px;
+}
+
+.cat-list {
+  max-height: 45vh;
+  overflow-y: auto;
+}
+
+.cat-empty {
+  color: var(--text-muted);
+  font-size: 13px;
+  padding: 12px 0;
+}
+
+.cat-archived-section {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.cat-archived-section .btn-sm {
+  margin-bottom: 8px;
+}
+
+@media (max-width: 480px) {
+  .cat-row { grid-template-columns: 1fr 90px auto auto; gap: 6px; }
+}

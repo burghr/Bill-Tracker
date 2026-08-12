@@ -40,6 +40,7 @@ app.use('/api/paychecks', require('./routes/paychecks'));
 app.use('/api/bills', require('./routes/bills'));
 app.use('/api/balance', require('./routes/balance'));
 app.use('/api/debts', require('./routes/debts'));
+app.use('/api/budget', require('./routes/budget'));
 
 // Serve built frontend (production / Docker)
 const distDir = path.join(__dirname, '../frontend/dist');
