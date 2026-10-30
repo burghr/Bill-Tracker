@@ -41,7 +41,7 @@ export default function BillItem({ bill, paychecks, onUpdate, onDelete, dragHand
         {bill.recurrence && bill.recurrence !== 'monthly' && (
           <span className="bill-recurrence">{bill.recurrence}</span>
         )}
-        {bill.is_autopay && (
+        {!!bill.is_autopay && (
           <span className="bill-recurrence" title={bill.pay_on ? `Auto-pays on day ${bill.pay_on.slice(-2)}` : 'Auto-pay'}>
             auto-pay{bill.pay_on ? ` · ${bill.pay_on.slice(-2)}` : ''}
           </span>

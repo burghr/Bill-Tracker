@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1a1d27"/>
+      <stop offset="1" stop-color="#0f1117"/>
+    </linearGradient>
+    <linearGradient id="paper" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2c3044"/>
+      <stop offset="1" stop-color="#232636"/>
+    </linearGradient>
+  </defs>
+  <!-- Full-bleed background: iOS rounds the corners, maskable icons need no transparency -->
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <!-- Dark receipt with a torn bottom edge, kept inside the maskable safe zone -->
+  <path d="M166 112 a14 14 0 0 1 14 -14 h152 a14 14 0 0 1 14 14 V404
+           l-22.5 -16 -22.5 16 -22.5 -16 -22.5 16 -22.5 -16 -22.5 16 -22.5 -16 -22.5 16 Z"
+        fill="url(#paper)" stroke="#3d4260" stroke-width="4" stroke-linejoin="round"/>
+  <text x="256" y="250" text-anchor="middle" font-family="Helvetica, Arial, sans-serif"
+        font-size="132" font-weight="700" fill="#22c55e">$</text>
+  <rect x="204" y="284" width="104" height="14" rx="7" fill="#4a5070"/>
+  <rect x="204" y="316" width="72" height="14" rx="7" fill="#4a5070"/>
+</svg>

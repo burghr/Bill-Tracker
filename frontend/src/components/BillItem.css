@@ -52,11 +52,13 @@
   color: #000;
 }
 
+/* Tags wrap below the name when the row is narrow, so the name keeps its width */
 .bill-name {
   flex: 1;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: 4px 8px;
   min-width: 0;
 }
 .bill-name > span:first-child {
